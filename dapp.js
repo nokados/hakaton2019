@@ -16,11 +16,13 @@
  limitations under the License.
  */
 
+const APP_CONFIG = require('./appConfig.json');
+
 /**
  * Detalist contract address
  * @type {string}
  */
-const DETALIST_CONTRACT_ADDRESS = '30';
+const DETALIST_CONTRACT_ADDRESS = '1';
 
 const logger = new (require(global.PATH.mainDir + '/modules/logger'))("Detalist");
 const storj = require(global.PATH.mainDir + '/modules/instanceStorage');
@@ -33,6 +35,11 @@ let that;
 
 const express = require('express');
 const app = express();
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({
+    extended: false
+}));
+app.use(bodyParser.json());
 
 app.use('/', express.static('front/build'));
 
@@ -49,9 +56,8 @@ class App extends DApp {
      */
     init() {
         that = this;
-
-        app.listen(that.config.application.httpPort, function () {
-            console.log('Detalist started at ' + that.config.application.httpPort);
+        app.listen(APP_CONFIG.httpPort, function () {
+            logger.info('Detalist started at ' + APP_CONFIG.httpPort);
         });
 
 
@@ -68,75 +74,15 @@ class App extends DApp {
             process.exit();
         });*/
 
-        /**
-         * Booked now list
-         */
-        this.network.rpc.registerGetHandler('/freelancers/bookedNow', async function (req, res) {
-            that.ecmaContract.events.rawQuery('SELECT v1 as hash, v2 as projectId, v3 as untilDate FROM `events` WHERE `event` = "ChangeBookStatus" GROUP BY v1 HAVING v2 is not null AND v2 != ""', false, function (err, val) {
-                res.send(that.jsonOkResponse({list: val}));
-            });
-        });
 
         /**
-         * Get freelancer
+         * Get item
          */
-        this.network.rpc.registerGetHandler('/freelancers/:hash', async function (req, res) {
-            let hash = req.params.hash;
+        app.get('/item/:id', async function (req, res) {
+            let id = req.params.id;
             try {
-                let result = await that.contracts.ecmaPromise.callMethodRollback(DETALIST_CONTRACT_ADDRESS, 'getFreelancer', [hash], {});
+                let result = await that.contracts.ecmaPromise.callMethodRollback(DETALIST_CONTRACT_ADDRESS, 'getItem', [id], {});
                 res.send(that.jsonOkResponse(JSON.parse(result)))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
-
-        /**
-         * Create freelancer
-         */
-        that.network.rpc.registerPostHandler('/freelancers/create', async function (req, res) {
-            let hash = req.body.hash;
-            let status = '1';
-            if(!hash) {
-                return res.send(that.jsonErrorResponse('hash not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'createFreelancer', [hash, status], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
-
-        /**
-         * Delete freelancer
-         */
-        that.network.rpc.registerPostHandler('/freelancers/delete', async function (req, res) {
-            let hash = req.body.hash;
-            if(!hash) {
-                return res.send(that.jsonErrorResponse('hash not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'deleteFreelancer', [hash], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
-
-        /**
-         * Update freelancer
-         */
-        that.network.rpc.registerPostHandler('/freelancers/update', async function (req, res) {
-            let hash = req.body.hash;
-            if(!hash) {
-                return res.send(that.jsonErrorResponse('hash not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'updateFreelancer', [hash], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
             } catch (e) {
                 res.send(that.jsonErrorResponse(e));
             }
@@ -145,143 +91,37 @@ class App extends DApp {
         /**
          * New freelancer status
          */
-        that.network.rpc.registerPostHandler('/freelancers/newStatus', async function (req, res) {
-            let hash = req.body.hash;
-            let status = req.body.status;
-            let sender = req.body.sender;
-            let senderOnBehalf = req.body.senderOnBehalf;
-            if(!hash || !status || !sender || !senderOnBehalf) {
-                return res.send(that.jsonErrorResponse('hash, status, senderOnBehalf or sender not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'newStatus', [hash, status, sender, senderOnBehalf], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
-
-        /**
-         * Skill proofing
-         */
-        that.network.rpc.registerPostHandler('/freelancers/proofSkill', async function (req, res) {
-            let hash = req.body.hash;
-            let skill = req.body.skill;
-            let skillType = req.body.skillType;
-            let approved = req.body.approved;
-            let sender = req.body.sender;
-            let senderOnBehalf = req.body.senderOnBehalf;
-            if(!hash || !skill || !sender || !senderOnBehalf || !skillType || typeof approved === 'undefined') {
-                return res.send(that.jsonErrorResponse('hash, skill, sender, senderOnBehalf, skillType or approved not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'proofSkill', [hash, skill, skillType, approved, sender, senderOnBehalf], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
-
-
-        /**
-         * New freelancer project mark
-         */
-        that.network.rpc.registerPostHandler('/freelancers/newMark', async function (req, res) {
-            let hash = req.body.hash;
-            let projectHash = req.body.projectHash;
+        app.post('/item/create', async function (req, res) {
+            let code = req.body.code;
             let type = req.body.type;
-            let mark = req.body.mark;
-            let sender = req.body.sender;
-            let senderOnBehalf = req.body.senderOnBehalf;
-            if(!hash || !projectHash || !type || !sender || !senderOnBehalf || typeof mark === 'undefined') {
-                return res.send(that.jsonErrorResponse('hash, projectHash, senderOnBehalf, type, mark, sender not found'))
+            let addedBy = req.body.addedBy;
+            let bench = req.body.bench;
+            let params = req.body.params; //TODO: Чблин делать?
+            try {
+                params = JSON.parse(params);
+            } catch (e) {
+            }
+            let parts = [];
+
+            if(Array.isArray(req.body['parts[]'])) {
+                parts = req.body['parts[]'];
+            } else if(req.body['parts[]']) {
+                parts = [req.body['parts[]']];
+            }
+
+            let additionalInfo = req.body.additionalInfo;
+            if(!code || !type || !addedBy || !bench || !params || !Array.isArray(parts)) {
+                return res.send(that.jsonErrorResponse('One of requied param not found'))
             }
 
             try {
-                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'newMark', [hash, projectHash, type, mark, sender, senderOnBehalf], {});
+                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'addItem', [code, type, addedBy, bench, params, parts, additionalInfo], {});
                 res.send(that.jsonOkResponse({newBlock: result}))
             } catch (e) {
                 res.send(that.jsonErrorResponse(e));
             }
         });
 
-        /**
-         * Book freelancer
-         */
-        that.network.rpc.registerPostHandler('/freelancers/bookFreelancer', async function (req, res) {
-            let hash = req.body.hash;
-            let projectHash = req.body.projectHash;
-            let busyTo = req.body.busyTo;
-            let sender = req.body.sender;
-            let senderOnBehalf = req.body.senderOnBehalf;
-            if(!hash || !projectHash || !busyTo || !sender || !senderOnBehalf) {
-                return res.send(that.jsonErrorResponse('hash, projectHash, senderOnBehalf, busyTo, sender not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'bookFreelancer', [hash, projectHash, busyTo, sender, senderOnBehalf], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
-
-        /**
-         * UnBook freelancer
-         */
-        that.network.rpc.registerPostHandler('/freelancers/unbookFreelancer', async function (req, res) {
-            let hash = req.body.hash;
-            let sender = req.body.sender;
-            let senderOnBehalf = req.body.senderOnBehalf;
-            if(!hash || !sender || !senderOnBehalf) {
-                return res.send(that.jsonErrorResponse('hash, sender, senderOnBehalf not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'unbookFreelancer', [hash, sender, senderOnBehalf], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
-
-        /**
-         * Transfer from any wallet to any wallet
-         */
-        that.network.rpc.registerPostHandler('/freelancers/transfer', async function (req, res) {
-            let from = req.body.from;
-            let to = req.body.to;
-            let amount = String(req.body.amount);
-            if(!from || !to || !amount) {
-                return res.send(that.jsonErrorResponse('from, to, amount not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(that.getMasterContractAddress(), 'transferFromTo', [from, to, amount], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
-
-        /**
-         * Mint tokens
-         */
-        that.network.rpc.registerPostHandler('/freelancers/mint', async function (req, res) {
-            let amount = String(req.body.amount);
-            if(!amount) {
-                return res.send(that.jsonErrorResponse('amount not found'))
-            }
-
-            try {
-                let result = await that.contracts.ecmaPromise.deployMethod(that.getMasterContractAddress(), 'mint', [amount], {});
-                res.send(that.jsonOkResponse({newBlock: result}))
-            } catch (e) {
-                res.send(that.jsonErrorResponse(e));
-            }
-        });
 
         /**
          * Get freelancer status list

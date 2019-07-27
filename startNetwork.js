@@ -68,8 +68,7 @@ class App extends DApp {
         //Preparing environment
         logger.info('Deploying contract...');
         that.contracts.ecmaContract.deployContract(masterContract, 0, async function (deployedContract) {
-            assert.true(deployedContract.address === that.getMasterContractAddress(), 'Invalid master contract address ' + that.getMasterContractAddress());
-            logger.info("Master contract deployed");
+            logger.info("Contract deployed");
         });
 
 

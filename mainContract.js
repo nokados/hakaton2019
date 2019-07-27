@@ -76,6 +76,9 @@ class mainContract extends Contract {
 
         for (let partId of parts) {
             partId = Number(partId);
+            if(partId >= currIndex){
+                throw new Error('You cant include youself or unlisted items as a part')
+            }
             if(this._usedItems[partId]) {
                 throw new Error(`This part ${partId} used in ${currIndex}. You can't use this part in new item.`);
             }
@@ -85,6 +88,7 @@ class mainContract extends Contract {
         this._items[currIndex] = {
             id: currIndex,
             code: code,
+            type: type,
             addedBy: addedBy,
             bench: bench,
             params: params,
@@ -105,6 +109,10 @@ class mainContract extends Contract {
      */
     _getItemWithSubitems(id) {
         let item = this._items[id];
+        if(!item) {
+            throw new Error(`Item ${id} not found`);
+        }
+
         let parts = [];
         for (let part of item.parts) {
             parts.push(this._getItemWithSubitems(part));
@@ -122,13 +130,7 @@ class mainContract extends Contract {
      */
     getItem(id) {
         assert.defined(id, 'Item id must be defined');
-
         id = Number(id);
-
-        if(!this._items[id]) {
-            throw new Error(`Item ${id} not found`);
-        }
-
         return JSON.stringify(this._getItemWithSubitems(id));
     }
 

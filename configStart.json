@@ -26,7 +26,7 @@
     "enabled": true,
     "allowDebugMessages": true,
     "contractInstanceCacheLifetime": 10000,
-    "masterContract": 2
+    "masterContract": false
   },
   "appEntry": "./startNetwork.js",
   "signFunction": "bitcore",
