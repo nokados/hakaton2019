@@ -45,6 +45,16 @@ class mainContract extends Contract {
 
         this._code2Item = new BlockchainMap('code2item');
 
+        /**
+         * AddItem event
+         * newId  code   bench  params additionalInfo
+         * number string string string string
+         * @type {Event}
+         * @private
+         */
+        this._AddItemEvent = new Event('AddItem', 'number', 'string', 'string', 'string', 'string');
+
+
         if(contracts.isDeploy()) {
             this._data['autoIndex'] = 0;
         }
@@ -116,6 +126,8 @@ class mainContract extends Contract {
             additionalInfo: additionalInfo
         };
 
+        this._AddItemEvent.emit(currIndex, code, bench, JSON.stringify(params), JSON.stringify(additionalInfo));
+
         //Increment item counter
         this._incrementIndex();
 
@@ -161,13 +173,25 @@ class mainContract extends Contract {
      * @returns {string}
      */
     getItemByCode(code) {
-
         assert.defined(code, 'Code must be defined');
         code = String(code);
-
-        console.log(code, this._code2Item[code]);
-
         return this.getItem(this._code2Item[code]);
+    }
+
+    /**
+     * Get all free items
+     * @returns {string}
+     */
+    getAllItems() {
+        let items = [];
+        for (let i = 0; i < this._data['autoIndex']; i++) {
+            if(this._usedItems[i] !== null) {
+                continue;
+            }
+            items.push(this._getItemWithSubitems(i));
+        }
+
+        return JSON.stringify(items);
     }
 
 }

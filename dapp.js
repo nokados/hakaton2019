@@ -101,6 +101,30 @@ class App extends DApp {
             }
         });
 
+        app.get('/items', async function (req, res) {
+            try {
+                let result = await that.contracts.ecmaPromise.callMethodRollback(DETALIST_CONTRACT_ADDRESS, 'getAllItems', [], {});
+                res.send(that.jsonOkResponse(JSON.parse(result)))
+            } catch (e) {
+                res.send(that.jsonErrorResponse(e));
+            }
+        });
+
+        app.get('/items/search/:search', async function (req, res) {
+            let search = req.params.search;
+            that.ecmaContract.events.rawQuery('SELECT * FROM `events` WHERE `event` = ? AND contract = ? AND (`v4` like "%' + search + '%" OR `v5` like "%' + search + '%")', ['AddItem', DETALIST_CONTRACT_ADDRESS], function (err, data) {
+                data = data.map(function (val) {
+                    return {
+                        id: val.v1,
+                        code: val.v2,
+                        bench: val.v3
+                    };
+                });
+
+                res.send(that.jsonOkResponse(data));
+            });
+        });
+
         /**
          * New freelancer status
          */
