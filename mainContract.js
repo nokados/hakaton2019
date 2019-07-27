@@ -14,6 +14,8 @@
 const CONTRACT_OWNER = 'izNqZ1mtGh4ZBYdgzbqkDm7bvKyueUEt8WP';
 
 
+// Запрос айтемов
+// отметка о браке
 /**
  * Main Detalist contract
  */
@@ -41,6 +43,8 @@ class mainContract extends Contract {
 
         this._usedItems = new BlockchainMap('usedItems');
 
+        this._code2Item = new BlockchainMap('code2item');
+
         if(contracts.isDeploy()) {
             this._data['autoIndex'] = 0;
         }
@@ -66,6 +70,8 @@ class mainContract extends Contract {
      * @returns {Number}
      */
     addItem(code, type, addedBy, bench, params, parts, additionalInfo = {}) {
+
+        //Checking input data
         assert.defined(code, 'You must define item code');
         assert.defined(type, 'You must define item code');
         assert.defined(addedBy, 'You must define item code');
@@ -74,9 +80,11 @@ class mainContract extends Contract {
 
         const currIndex = this._data['autoIndex'];
 
+
+        //Checking parts
         for (let partId of parts) {
             partId = Number(partId);
-            if(partId >= currIndex){
+            if(partId >= currIndex) {
                 throw new Error('You cant include youself or unlisted items as a part')
             }
             if(this._usedItems[partId]) {
@@ -85,6 +93,18 @@ class mainContract extends Contract {
             this._usedItems[partId] = currIndex;
         }
 
+
+        code = String(code);
+
+
+        //Checking code uniq
+        if(this._code2Item[code] !== null) {
+            throw new Error(`Code ${code} already defined by ${this._code2Item[code]}`)
+        }
+        this._code2Item[code] = currIndex;
+
+
+        //Save item
         this._items[currIndex] = {
             id: currIndex,
             code: code,
@@ -96,6 +116,7 @@ class mainContract extends Contract {
             additionalInfo: additionalInfo
         };
 
+        //Increment item counter
         this._incrementIndex();
 
         return currIndex;
@@ -129,11 +150,25 @@ class mainContract extends Contract {
      * @returns {string}
      */
     getItem(id) {
-        assert.defined(id, 'Item id must be defined');
+        assert.true(typeof id !== 'undefined' && id !== null, 'Item id must be defined');
         id = Number(id);
         return JSON.stringify(this._getItemWithSubitems(id));
     }
 
+    /**
+     * Returns item by code
+     * @param code
+     * @returns {string}
+     */
+    getItemByCode(code) {
+
+        assert.defined(code, 'Code must be defined');
+        code = String(code);
+
+        console.log(code, this._code2Item[code]);
+
+        return this.getItem(this._code2Item[code]);
+    }
 
 }
 

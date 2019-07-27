@@ -89,6 +89,19 @@ class App extends DApp {
         });
 
         /**
+         * Get item
+         */
+        app.get('/item/bycode/:id', async function (req, res) {
+            let id = req.params.id;
+            try {
+                let result = await that.contracts.ecmaPromise.callMethodRollback(DETALIST_CONTRACT_ADDRESS, 'getItemByCode', [id], {});
+                res.send(that.jsonOkResponse(JSON.parse(result)))
+            } catch (e) {
+                res.send(that.jsonErrorResponse(e));
+            }
+        });
+
+        /**
          * New freelancer status
          */
         app.post('/item/create', async function (req, res) {
