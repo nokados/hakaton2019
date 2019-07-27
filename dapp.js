@@ -160,35 +160,17 @@ class App extends DApp {
         });
 
 
-        /**
-         * Get freelancer status list
-         */
-        this.network.rpc.registerGetHandler('/freelancers/statusList/:hash', async function (req, res) {
-            let hash = req.params.hash;
-            that.ecmaContract.events.getContractEvents(DETALIST_CONTRACT_ADDRESS, 'NewStatus', {additionalStatement: 'AND `v1` = "' + hash + '" '}, function (err, values) {
-
-                values = values.map(function (val) {
-                    return {
-                        block: val.block,
-                        blockHash: val.hash,
-                        hash: val.v1,
-                        status: val.v2,
-                        sender: val.v3,
-                        date: Number(val.timestamp)
-                    };
-                });
-                res.send(that.jsonOkResponse({list: values}));
-            });
-        });
-
-
-        /**
-         * Get main token balance
-         */
-        this.network.rpc.registerGetHandler('/token/balance/:address', async function (req, res) {
-            let address = req.params.address;
-            let mainToken = new TokenContractConnector(that.ecmaContract, that.getMasterContractAddress());
-            res.send(that.jsonOkResponse(await mainToken.balanceOf(address)));
+        app.post('/item/markBroken', async function (req, res) {
+            let code = req.body.code;
+            if(!code) {
+                return res.send(that.jsonErrorResponse('Code param not found'))
+            }
+            try {
+                let result = await that.contracts.ecmaPromise.deployMethod(DETALIST_CONTRACT_ADDRESS, 'markBrokenByCode', [code], {});
+                res.send(that.jsonOkResponse({newBlock: result}))
+            } catch (e) {
+                res.send(that.jsonErrorResponse(e));
+            }
         });
 
     }

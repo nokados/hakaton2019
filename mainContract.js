@@ -14,7 +14,6 @@
 const CONTRACT_OWNER = 'izNqZ1mtGh4ZBYdgzbqkDm7bvKyueUEt8WP';
 
 
-// Запрос айтемов
 // отметка о браке
 /**
  * Main Detalist contract
@@ -53,6 +52,15 @@ class mainContract extends Contract {
          * @private
          */
         this._AddItemEvent = new Event('AddItem', 'number', 'string', 'string', 'string', 'string');
+
+        /**
+         * Broken item event
+         * id     code   bench
+         * number string string
+         * @type {Event}
+         * @private
+         */
+        this._BrokeEvent = new Event('Broke', 'number', 'string', 'string');
 
 
         if(contracts.isDeploy()) {
@@ -123,6 +131,7 @@ class mainContract extends Contract {
             bench: bench,
             params: params,
             parts: parts,
+            broken: false,
             additionalInfo: additionalInfo
         };
 
@@ -192,6 +201,40 @@ class mainContract extends Contract {
         }
 
         return JSON.stringify(items);
+    }
+
+    /**
+     * Mark item broken
+     * @param {number} id
+     */
+    markBroken(id) {
+        assert.true(typeof id !== 'undefined' && id !== null, 'Item id must be defined');
+        id = Number(id);
+
+        let item = this._items[id];
+
+        if(item.broken) {
+            throw new Error('This item already marked as broken')
+        }
+
+        //Mark as broken
+        item.broken = true;
+
+        //Emit broke event
+        this._BrokeEvent.emit(id, item.code, item.bench);
+
+        //Save changes
+        this._items[id] = item;
+    }
+
+    /**
+     * Mark item broken by code
+     * @param {string} code
+     */
+    markBrokenByCode(code) {
+        assert.defined(code, 'Code must be defined');
+        code = String(code);
+        return this.markBroken(this._code2Item[code]);
     }
 
 }
