@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')
+
 import numpy as np
 import pymc3 as pm
 import matplotlib.pyplot as plt
@@ -56,7 +59,7 @@ def make_plot(ppc):
     plt.errorbar(np.arange(5), ppc.mean(axis=0), ppc.std(axis=0)**2, marker='^')
     plt.xticks(np.arange(5), ['empty'] + train_columns)
     plt.yticks(np.linspace(0, 1, 10))
-    plt.save('res.png')
+    plt.savefig('res.png')
 
 if __name__ == '__main__':
     row = pd.DataFrame([{'nuts_hardness': 2.460573,  'reliability_index': 8.34, 'width_diff': 10, 'diam_diff': 0}])
