@@ -14,7 +14,6 @@
 const CONTRACT_OWNER = 'izNqZ1mtGh4ZBYdgzbqkDm7bvKyueUEt8WP';
 
 
-// отметка о браке
 /**
  * Main Detalist contract
  */
@@ -111,16 +110,13 @@ class mainContract extends Contract {
             this._usedItems[partId] = currIndex;
         }
 
-
         code = String(code);
-
 
         //Checking code uniq
         if(this._code2Item[code] !== null) {
             throw new Error(`Code ${code} already defined by ${this._code2Item[code]}`)
         }
         this._code2Item[code] = currIndex;
-
 
         //Save item
         this._items[currIndex] = {

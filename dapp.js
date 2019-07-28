@@ -42,7 +42,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 app.use('/', express.static('front/build'));
-
+app.use('/front', express.static('detalist-front'));
 
 /**
  * Detalist DApp
@@ -129,6 +129,7 @@ class App extends DApp {
          * New freelancer status
          */
         app.post('/item/create', async function (req, res) {
+            console.log(req.body);
             let code = req.body.code;
             let type = req.body.type;
             let addedBy = req.body.addedBy;

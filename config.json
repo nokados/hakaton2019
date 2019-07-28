@@ -1,12 +1,11 @@
 {
-  "p2pPort": 6032,
+  "p2pPort": 6080,
   "httpServer": "localhost",
-  "httpPort": 3015,
+  "httpPort": 3080,
   "initialPeers": [
   ],
   "validators": [
-    "dlcpoa",
-    "thrusted"
+    "dlcpoa"
   ],
   "upnp": {
     "enabled": true,
